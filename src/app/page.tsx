@@ -21,6 +21,8 @@ export default function LoginPage() {
     localStorage.setItem('isAuthenticated', 'true');
     // Initialize tokens for new login
     resetTokens();
+    // Dispatch custom event to notify layout of auth change
+    window.dispatchEvent(new Event('authChange'));
     router.push('/search');
   };
 

@@ -19,18 +19,42 @@ export default function Layout({ children }: LayoutProps) {
         setIsClient(true);
         const authStatus = localStorage.getItem('isAuthenticated');
         setIsAuthenticated(!!authStatus);
+
+        // Listen for custom auth events to update state
+        const handleAuthChange = () => {
+            const newAuthStatus = localStorage.getItem('isAuthenticated');
+            setIsAuthenticated(!!newAuthStatus);
+        };
+
+        // Also check auth status periodically in case events don't fire
+        const interval = setInterval(() => {
+            const currentAuthStatus = localStorage.getItem('isAuthenticated');
+            setIsAuthenticated(prev => {
+                const newAuth = !!currentAuthStatus;
+                return newAuth !== prev ? newAuth : prev;
+            });
+        }, 1000);
+
+        window.addEventListener('authChange', handleAuthChange);
+
+        return () => {
+            window.removeEventListener('authChange', handleAuthChange);
+            clearInterval(interval);
+        };
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('searchedAddress');
         setIsAuthenticated(false);
+        // Dispatch custom event to notify layout of auth change
+        window.dispatchEvent(new Event('authChange'));
         router.push('/');
     };
 
     return (
         <div className="min-h-screen">
-            {isClient && <TokenCounter />}
+            {isClient && isAuthenticated && <TokenCounter />}
             {/* Header with Logo and Navigation */}
             <header className="bg-white shadow-sm border-b">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
